@@ -1,0 +1,29 @@
+- name: Backup network Devices
+  hosts: all
+  connection: network_cli
+  gather_facts: no
+
+  vars:
+   backup_path: "/etc/ansible/backup"
+
+
+  tasks:
+   - name: Get running config
+     cisco.ios.ios_command:
+      commands:
+       - show running-config
+     register: config_output
+
+   - name: Get current timestamp
+     set_fact:
+      timestamp: "{{ lookup('pipe', 'date +%Y-%m-%d_%H-%M-%S') }}"
+
+   - name: Save backup file with timestamp
+     copy:
+      content: "{{ config_output.stdout[0] }}"
+      dest: "{{ backup_path }}/{{ inventory_hostname }}_{{ timestamp }}.txt"
+     delegate_to: localhost
+
+   - name: Tasks done
+     debug:
+      msg: "Bakup completed for {{ inventory_hostname }}at{{ timestamp }}"
